@@ -1,0 +1,1809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OS Simulator v2.0</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;600;800&display=swap');
+
+  :root {
+    --bg: #0a0e1a;
+    --bg2: #0f1525;
+    --bg3: #141b2d;
+    --card: #111827;
+    --border: #1e2d4a;
+    --border2: #2a3f5f;
+    --cyan: #00f5ff;
+    --violet: #8b5cf6;
+    --green: #00ff88;
+    --orange: #ff8c00;
+    --pink: #ff2d78;
+    --yellow: #ffd700;
+    --text: #e0e8ff;
+    --text2: #7888aa;
+    --text3: #4a5568;
+    --font-mono: 'Share Tech Mono', monospace;
+    --font-head: 'Orbitron', monospace;
+    --font-body: 'Rajdhani', sans-serif;
+    --glow-cyan: 0 0 20px rgba(0,245,255,0.3);
+    --glow-violet: 0 0 20px rgba(139,92,246,0.3);
+    --glow-green: 0 0 20px rgba(0,255,136,0.3);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 15px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .app {
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 220px;
+    min-width: 220px;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .logo-area {
+    padding: 20px 16px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo-title {
+    font-family: var(--font-head);
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--cyan);
+    letter-spacing: 2px;
+    text-shadow: var(--glow-cyan);
+  }
+
+  .logo-sub {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text2);
+    letter-spacing: 1px;
+  }
+
+  .version {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text3);
+    margin-top: 4px;
+  }
+
+  .nav-section {
+    padding: 12px 8px;
+    flex: 1;
+  }
+
+  .nav-label {
+    font-size: 10px;
+    font-family: var(--font-mono);
+    color: var(--text3);
+    letter-spacing: 2px;
+    padding: 6px 8px 4px;
+    text-transform: uppercase;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--text2);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    transition: all 0.2s;
+    margin-bottom: 2px;
+    border: 1px solid transparent;
+  }
+
+  .nav-item:hover {
+    background: rgba(0,245,255,0.05);
+    color: var(--cyan);
+    border-color: rgba(0,245,255,0.1);
+  }
+
+  .nav-item.active {
+    background: rgba(0,245,255,0.1);
+    color: var(--cyan);
+    border-color: rgba(0,245,255,0.2);
+    box-shadow: inset 2px 0 0 var(--cyan);
+  }
+
+  .nav-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.7;
+    flex-shrink: 0;
+  }
+
+  .sidebar-footer {
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  .status-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 6px var(--green);
+    margin-right: 6px;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .footer-text {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text3);
+  }
+
+  /* MAIN */
+  .main {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: var(--bg);
+  }
+
+  .page {
+    display: none;
+    padding: 24px;
+    animation: fadeIn 0.3s ease;
+  }
+
+  .page.active {
+    display: block;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .page-header {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 16px;
+    margin-bottom: 24px;
+  }
+
+  .page-title {
+    font-family: var(--font-head);
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: 2px;
+  }
+
+  .page-sub {
+    font-size: 12px;
+    color: var(--text3);
+    font-family: var(--font-mono);
+    margin-top: 4px;
+  }
+
+  /* CARDS */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px;
+    transition: border-color 0.2s;
+  }
+
+  .card:hover {
+    border-color: var(--border2);
+  }
+
+  .card-title {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text3);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  /* STAT CARDS */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+
+  .stat-card {
+    background: var(--card);
+    border-radius: 10px;
+    padding: 16px;
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+
+  .stat-card.cyan::before { background: var(--cyan); box-shadow: var(--glow-cyan); }
+  .stat-card.violet::before { background: var(--violet); box-shadow: var(--glow-violet); }
+  .stat-card.green::before { background: var(--green); }
+  .stat-card.orange::before { background: var(--orange); }
+
+  .stat-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .stat-value {
+    font-family: var(--font-head);
+    font-size: 26px;
+    font-weight: 600;
+  }
+
+  .stat-card.cyan .stat-value { color: var(--cyan); }
+  .stat-card.violet .stat-value { color: var(--violet); }
+  .stat-card.green .stat-value { color: var(--green); }
+  .stat-card.orange .stat-value { color: var(--orange); }
+
+  .stat-icon {
+    position: absolute;
+    bottom: 12px;
+    right: 14px;
+    font-size: 28px;
+    opacity: 0.08;
+  }
+
+  /* CHARTS GRID */
+  .charts-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .chart-wrap {
+    position: relative;
+    height: 240px;
+  }
+
+  /* GRID LAYOUTS */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+  /* TABLES */
+  .table-wrap {
+    overflow-x: auto;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--font-mono);
+    font-size: 13px;
+  }
+
+  thead tr {
+    background: var(--bg3);
+    border-bottom: 1px solid var(--border);
+  }
+
+  thead th {
+    padding: 10px 14px;
+    text-align: left;
+    color: var(--text2);
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+
+  tbody tr:last-child { border-bottom: none; }
+
+  tbody tr:hover { background: rgba(0,245,255,0.03); }
+
+  tbody td {
+    padding: 9px 14px;
+    color: var(--text);
+  }
+
+  /* BUTTONS */
+  .btn {
+    padding: 8px 16px;
+    border-radius: 6px;
+    border: 1px solid var(--border2);
+    background: var(--bg3);
+    color: var(--text);
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 1px;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .btn:hover { border-color: var(--cyan); color: var(--cyan); box-shadow: 0 0 10px rgba(0,245,255,0.15); }
+
+  .btn.primary {
+    background: rgba(0,245,255,0.1);
+    border-color: var(--cyan);
+    color: var(--cyan);
+  }
+
+  .btn.primary:hover { background: rgba(0,245,255,0.2); }
+
+  .btn.danger { border-color: var(--pink); color: var(--pink); }
+  .btn.danger:hover { background: rgba(255,45,120,0.1); }
+
+  .btn.success { border-color: var(--green); color: var(--green); }
+  .btn.success:hover { background: rgba(0,255,136,0.1); }
+
+  .btn-group {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+
+  /* INPUTS */
+  .input-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .field label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text3);
+    letter-spacing: 1px;
+  }
+
+  .field input, .field select {
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    color: var(--text);
+    padding: 7px 10px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    outline: none;
+    min-width: 80px;
+    transition: border-color 0.2s;
+  }
+
+  .field input:focus, .field select:focus {
+    border-color: var(--cyan);
+    box-shadow: 0 0 0 2px rgba(0,245,255,0.1);
+  }
+
+  .field select option { background: var(--bg3); }
+
+  /* GANTT */
+  .gantt-wrap {
+    overflow-x: auto;
+    margin-top: 14px;
+  }
+
+  .gantt-container {
+    position: relative;
+    background: var(--bg3);
+    border-radius: 6px;
+    padding: 10px;
+    min-height: 60px;
+    min-width: 400px;
+  }
+
+  /* BADGES */
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    letter-spacing: 0.5px;
+  }
+
+  .badge.cyan { background: rgba(0,245,255,0.1); color: var(--cyan); border: 1px solid rgba(0,245,255,0.2); }
+  .badge.green { background: rgba(0,255,136,0.1); color: var(--green); border: 1px solid rgba(0,255,136,0.2); }
+  .badge.orange { background: rgba(255,140,0,0.1); color: var(--orange); border: 1px solid rgba(255,140,0,0.2); }
+  .badge.pink { background: rgba(255,45,120,0.1); color: var(--pink); border: 1px solid rgba(255,45,120,0.2); }
+  .badge.violet { background: rgba(139,92,246,0.1); color: var(--violet); border: 1px solid rgba(139,92,246,0.2); }
+
+  /* OUTPUT BOX */
+  .output-box {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text2);
+    min-height: 60px;
+    line-height: 1.7;
+    margin-top: 14px;
+  }
+
+  .output-box .ok { color: var(--green); }
+  .output-box .err { color: var(--pink); }
+  .output-box .info { color: var(--cyan); }
+  .output-box .warn { color: var(--orange); }
+
+  /* MEMORY BLOCKS */
+  .memory-vis {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 12px;
+  }
+
+  .mem-block {
+    height: 32px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: bold;
+    border: 1px solid rgba(255,255,255,0.1);
+    transition: all 0.3s;
+    cursor: pointer;
+    min-width: 30px;
+  }
+
+  /* PAGE TABLE */
+  .page-table-vis {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
+    gap: 4px;
+    margin-top: 12px;
+  }
+
+  .frame-cell {
+    height: 44px;
+    border-radius: 5px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    border: 1px solid var(--border2);
+    transition: all 0.3s;
+  }
+
+  .frame-cell .fnum { font-size: 9px; color: var(--text3); }
+  .frame-cell .fval { font-size: 13px; font-weight: bold; }
+  .frame-cell.hit { background: rgba(0,255,136,0.15); border-color: var(--green); }
+  .frame-cell.fault { background: rgba(255,45,120,0.15); border-color: var(--pink); }
+  .frame-cell.empty { background: var(--bg3); }
+
+  /* DISK GRID */
+  .disk-grid {
+    display: grid;
+    gap: 3px;
+    margin-top: 12px;
+  }
+
+  .disk-block {
+    height: 22px;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    border: 1px solid rgba(255,255,255,0.05);
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+
+  /* SEMAPHORE VIS */
+  .sem-vis {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+  }
+
+  .sem-slot {
+    width: 52px;
+    height: 52px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    border: 1px solid var(--border2);
+    transition: all 0.4s;
+  }
+
+  .sem-slot .slot-val {
+    font-size: 18px;
+    font-weight: bold;
+    font-family: var(--font-head);
+  }
+
+  .sem-slot.full { background: rgba(0,255,136,0.1); border-color: var(--green); color: var(--green); }
+  .sem-slot.empty { background: rgba(255,45,120,0.1); border-color: var(--pink); color: var(--pink); }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg2); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text3); }
+
+  /* QUICK ACTIONS */
+  .quick-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .quick-btn {
+    padding: 13px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text2);
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.2s;
+  }
+
+  .quick-btn:hover { border-color: var(--cyan); color: var(--cyan); background: rgba(0,245,255,0.04); }
+  .quick-btn:nth-child(2) { border-color: rgba(139,92,246,0.3); }
+  .quick-btn:nth-child(2):hover { border-color: var(--violet); color: var(--violet); background: rgba(139,92,246,0.04); }
+  .quick-btn:nth-child(3) { border-color: rgba(0,255,136,0.3); }
+  .quick-btn:nth-child(3):hover { border-color: var(--green); color: var(--green); background: rgba(0,255,136,0.04); }
+  .quick-btn:nth-child(4) { border-color: rgba(255,140,0,0.3); }
+  .quick-btn:nth-child(4):hover { border-color: var(--orange); color: var(--orange); background: rgba(255,140,0,0.04); }
+  .quick-btn:nth-child(5) { border-color: rgba(255,45,120,0.3); }
+  .quick-btn:nth-child(5):hover { border-color: var(--pink); color: var(--pink); background: rgba(255,45,120,0.04); }
+  .quick-btn:nth-child(6) { border-color: rgba(139,92,246,0.3); }
+
+  /* METRICS ROW */
+  .metrics-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  .metric-box {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 10px 12px;
+    text-align: center;
+  }
+
+  .metric-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+
+  .metric-value {
+    font-family: var(--font-head);
+    font-size: 18px;
+    color: var(--cyan);
+  }
+
+  /* ANIMATION STEP */
+  .step-active {
+    animation: stepGlow 0.5s ease;
+  }
+
+  @keyframes stepGlow {
+    0% { box-shadow: 0 0 0px var(--cyan); }
+    50% { box-shadow: 0 0 12px var(--cyan); }
+    100% { box-shadow: 0 0 0px var(--cyan); }
+  }
+
+  /* MATRIX INPUT */
+  .matrix-input {
+    display: inline-grid;
+    gap: 4px;
+    margin-bottom: 10px;
+  }
+
+  .matrix-input input {
+    width: 44px;
+    text-align: center;
+    padding: 5px;
+    font-size: 13px;
+  }
+
+  .section-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 18px 0;
+  }
+
+  .info-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="logo-area">
+    <div class="logo-title">OS</div>
+    <div class="logo-sub">SIMULATOR</div>
+    <div class="version">v 2.0</div>
+  </div>
+  <nav class="nav-section">
+    <div class="nav-label">MODULES</div>
+    <div class="nav-item active" onclick="navigate('dashboard')"><div class="nav-dot"></div>Dashboard</div>
+    <div class="nav-item" onclick="navigate('cpu')"><div class="nav-dot"></div>CPU Scheduling</div>
+    <div class="nav-item" onclick="navigate('memory')"><div class="nav-dot"></div>Memory Management</div>
+    <div class="nav-item" onclick="navigate('page')"><div class="nav-dot"></div>Page Replacement</div>
+    <div class="nav-item" onclick="navigate('sync')"><div class="nav-dot"></div>Synchronization</div>
+    <div class="nav-item" onclick="navigate('deadlock')"><div class="nav-dot"></div>Deadlock Handling</div>
+    <div class="nav-item" onclick="navigate('file')"><div class="nav-dot"></div>File Management</div>
+  </nav>
+  <div class="sidebar-footer">
+    <div style="display:flex;align-items:center;margin-bottom:4px">
+      <span class="status-dot"></span>
+      <span style="font-size:12px;color:var(--green);font-family:var(--font-mono)">System Ready</span>
+    </div>
+    <div class="footer-text" id="clockDisplay">--:--:-- --</div>
+    <div class="footer-text" id="dateDisplay">---</div>
+  </div>
+</aside>
+
+<!-- MAIN CONTENT -->
+<main class="main">
+
+  <!-- ===== DASHBOARD ===== -->
+  <div class="page active" id="page-dashboard">
+    <div class="page-header">
+      <div class="page-title">DASHBOARD</div>
+      <div class="page-sub">Overview of system modules, algorithms and performance.</div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card cyan">
+        <div class="stat-label">TOTAL MODULES</div>
+        <div class="stat-value">6</div>
+        <div class="stat-icon">⬡</div>
+      </div>
+      <div class="stat-card violet">
+        <div class="stat-label">TOTAL ALGORITHMS</div>
+        <div class="stat-value">16</div>
+        <div class="stat-icon">&lt;/&gt;</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-label">SYSTEM STATUS</div>
+        <div class="stat-value" style="font-size:18px;line-height:1.6">READY</div>
+        <div class="stat-icon">⚡</div>
+      </div>
+      <div class="stat-card orange">
+        <div class="stat-label">LAST RUN</div>
+        <div class="stat-value" style="font-size:18px;line-height:1.6" id="lastRunDisplay">—</div>
+        <div class="stat-icon">⏱</div>
+      </div>
+    </div>
+
+    <div class="charts-row">
+      <div class="card">
+        <div class="card-title">ALGORITHMS BY MODULE</div>
+        <div class="chart-wrap"><canvas id="pieChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">ALGORITHMS OVERVIEW (BAR CHART)</div>
+        <div class="chart-wrap"><canvas id="barChart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="charts-row">
+      <div class="card">
+        <div class="card-title">MODULE USAGE (THIS SESSION)</div>
+        <div class="chart-wrap"><canvas id="lineChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">QUICK ACTIONS</div>
+        <div class="quick-grid" style="margin-top:8px">
+          <div class="quick-btn" onclick="navigate('cpu')">CPU Scheduling <span>›</span></div>
+          <div class="quick-btn" onclick="navigate('memory')">Memory Management <span>›</span></div>
+          <div class="quick-btn" onclick="navigate('page')">Page Replacement <span>›</span></div>
+          <div class="quick-btn" onclick="navigate('sync')">Synchronization <span>›</span></div>
+          <div class="quick-btn" onclick="navigate('deadlock')">Deadlock Handling <span>›</span></div>
+          <div class="quick-btn" onclick="navigate('file')">File Management <span>›</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== CPU SCHEDULING ===== -->
+  <div class="page" id="page-cpu">
+    <div class="page-header">
+      <div class="page-title">CPU SCHEDULING</div>
+      <div class="page-sub">FCFS · SJF · Round Robin · Priority (Non-Preemptive)</div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-title">ADD PROCESS</div>
+      <div class="input-row" id="cpuInputRow">
+        <div class="field"><label>PID</label><input id="cpuPID" placeholder="P1" style="width:60px"></div>
+        <div class="field"><label>Arrival Time</label><input id="cpuAT" type="number" value="0" min="0" style="width:70px"></div>
+        <div class="field"><label>Burst Time</label><input id="cpuBT" type="number" value="4" min="1" style="width:70px"></div>
+        <div class="field"><label>Priority</label><input id="cpuPRI" type="number" value="1" min="1" style="width:70px"></div>
+        <div class="field"><label>Algorithm</label>
+          <select id="cpuAlgo">
+            <option>FCFS</option>
+            <option>SJF</option>
+            <option>Round Robin</option>
+            <option>Priority</option>
+          </select>
+        </div>
+        <div class="field" id="rrField" style="display:none"><label>Quantum</label><input id="cpuQuantum" type="number" value="2" min="1" style="width:60px"></div>
+        <div class="field" style="justify-content:flex-end"><button class="btn primary" onclick="addCPUProcess()">+ ADD</button></div>
+      </div>
+      <div class="btn-group">
+        <button class="btn success" onclick="runCPU()">▶ RUN</button>
+        <button class="btn" onclick="clearCPU()">CLEAR ALL</button>
+        <button class="btn" onclick="loadCPUSample()">LOAD SAMPLE</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-title">PROCESS TABLE</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>PID</th><th>AT</th><th>BT</th><th>Priority</th><th>CT</th><th>TAT</th><th>WT</th><th>RT</th><th>Action</th></tr></thead>
+          <tbody id="cpuTable"></tbody>
+        </table>
+      </div>
+      <div class="metrics-row">
+        <div class="metric-box"><div class="metric-label">AVG WAIT</div><div class="metric-value" id="cpuAvgWT">—</div></div>
+        <div class="metric-box"><div class="metric-label">AVG TAT</div><div class="metric-value" id="cpuAvgTAT">—</div></div>
+        <div class="metric-box"><div class="metric-label">CPU UTIL %</div><div class="metric-value" id="cpuUtil">—</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">GANTT CHART</div>
+      <div class="gantt-wrap"><div class="gantt-container" id="ganttChart"></div></div>
+    </div>
+  </div>
+
+  <!-- ===== MEMORY MANAGEMENT ===== -->
+  <div class="page" id="page-memory">
+    <div class="page-header">
+      <div class="page-title">MEMORY MANAGEMENT</div>
+      <div class="page-sub">First Fit · Best Fit · Worst Fit · Next Fit</div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-title">CONFIGURATION</div>
+      <div class="input-row">
+        <div class="field"><label>Block Sizes (comma-sep)</label><input id="memBlocks" value="100,500,200,300,600" style="width:220px"></div>
+        <div class="field"><label>Process Sizes (comma-sep)</label><input id="memProcs" value="212,417,112,426" style="width:220px"></div>
+        <div class="field"><label>Algorithm</label>
+          <select id="memAlgo">
+            <option>First Fit</option>
+            <option>Best Fit</option>
+            <option>Worst Fit</option>
+            <option>Next Fit</option>
+          </select>
+        </div>
+        <div class="field" style="justify-content:flex-end"><button class="btn primary" onclick="runMemory()">▶ RUN</button></div>
+      </div>
+    </div>
+
+    <div class="grid-2" style="margin-bottom:16px">
+      <div class="card">
+        <div class="card-title">ALLOCATION TABLE</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Process</th><th>Size</th><th>Block #</th><th>Block Size</th><th>Status</th></tr></thead>
+            <tbody id="memTable"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">FRAGMENTATION</div>
+        <div class="output-box" id="memOutput">Run the algorithm to see fragmentation stats.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">MEMORY VISUALIZATION</div>
+      <div class="memory-vis" id="memVis"></div>
+    </div>
+  </div>
+
+  <!-- ===== PAGE REPLACEMENT ===== -->
+  <div class="page" id="page-page">
+    <div class="page-header">
+      <div class="page-title">PAGE REPLACEMENT</div>
+      <div class="page-sub">FIFO · LRU · Optimal</div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-title">INPUT</div>
+      <div class="input-row">
+        <div class="field"><label>Reference String (space-sep)</label><input id="pageRef" value="7 0 1 2 0 3 0 4 2 3 0 3 2" style="width:260px"></div>
+        <div class="field"><label>Frames</label><input id="pageFrames" type="number" value="3" min="1" max="8" style="width:70px"></div>
+        <div class="field"><label>Algorithm</label>
+          <select id="pageAlgo">
+            <option>FIFO</option>
+            <option>LRU</option>
+            <option>Optimal</option>
+          </select>
+        </div>
+        <div class="field" style="justify-content:flex-end"><button class="btn primary" onclick="runPage()">▶ RUN</button></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-title">FRAME TABLE (STEP-BY-STEP)</div>
+      <div id="pageTableVis" class="page-table-vis"></div>
+      <div class="metrics-row" style="margin-top:14px">
+        <div class="metric-box"><div class="metric-label">PAGE HITS</div><div class="metric-value" id="pageHits">—</div></div>
+        <div class="metric-box"><div class="metric-label">PAGE FAULTS</div><div class="metric-value" id="pageFaults" style="color:var(--pink)">—</div></div>
+        <div class="metric-box"><div class="metric-label">HIT RATIO</div><div class="metric-value" id="pageHitRatio">—</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">PAGE TABLE LOG</div>
+      <div class="output-box" id="pageLog">Run the algorithm to see the page table log.</div>
+    </div>
+  </div>
+
+  <!-- ===== SYNCHRONIZATION ===== -->
+  <div class="page" id="page-sync">
+    <div class="page-header">
+      <div class="page-title">SYNCHRONIZATION</div>
+      <div class="page-sub">Producer-Consumer Problem · Semaphore · Bounded Buffer</div>
+    </div>
+
+    <div class="grid-2" style="margin-bottom:16px">
+      <div class="card">
+        <div class="card-title">CONFIGURATION</div>
+        <div class="input-row" style="flex-direction:column;gap:10px">
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <div class="field"><label>Buffer Size</label><input id="syncBufSize" type="number" value="5" min="2" max="12" style="width:70px"></div>
+            <div class="field"><label>Producers</label><input id="syncProd" type="number" value="2" min="1" max="5" style="width:70px"></div>
+            <div class="field"><label>Consumers</label><input id="syncCons" type="number" value="2" min="1" max="5" style="width:70px"></div>
+          </div>
+          <div class="btn-group">
+            <button class="btn primary" onclick="initSync()">INITIALIZE</button>
+            <button class="btn success" onclick="syncProduce()">PRODUCE</button>
+            <button class="btn" onclick="syncConsume()">CONSUME</button>
+            <button class="btn danger" onclick="resetSync()">RESET</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">SEMAPHORE VALUES</div>
+        <div id="semVis" style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:8px">
+          <div style="text-align:center">
+            <div class="stat-label">MUTEX</div>
+            <div class="metric-value" id="semMutex" style="font-size:28px">1</div>
+          </div>
+          <div style="text-align:center">
+            <div class="stat-label">EMPTY</div>
+            <div class="metric-value" id="semEmpty" style="font-size:28px;color:var(--orange)">5</div>
+          </div>
+          <div style="text-align:center">
+            <div class="stat-label">FULL</div>
+            <div class="metric-value" id="semFull" style="font-size:28px;color:var(--violet)">0</div>
+          </div>
+        </div>
+        <div style="margin-top:12px">
+          <div class="metric-label">In Pointer: <span id="syncIn" style="color:var(--cyan)">0</span> &nbsp; Out Pointer: <span id="syncOut" style="color:var(--violet)">0</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-title">BOUNDED BUFFER VISUALIZATION</div>
+      <div class="sem-vis" id="bufferVis"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">EXECUTION LOG</div>
+      <div class="output-box" id="syncLog" style="max-height:160px;overflow-y:auto">Initialize to start simulation.</div>
+    </div>
+  </div>
+
+  <!-- ===== DEADLOCK HANDLING ===== -->
+  <div class="page" id="page-deadlock">
+    <div class="page-header">
+      <div class="page-title">DEADLOCK HANDLING</div>
+      <div class="page-sub">Banker's Algorithm · Safe Sequence Detection · Resource Request Simulation</div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-title">SYSTEM CONFIGURATION</div>
+      <div class="input-row">
+        <div class="field"><label>Processes</label><input id="dlProcs" type="number" value="5" min="2" max="7" style="width:70px" onchange="buildDLMatrices()"></div>
+        <div class="field"><label>Resources</label><input id="dlRes" type="number" value="3" min="2" max="5" style="width:70px" onchange="buildDLMatrices()"></div>
+        <div class="field" style="justify-content:flex-end;gap:8px;flex-direction:row;align-items:flex-end">
+          <button class="btn" onclick="loadDLSample()">LOAD SAMPLE</button>
+          <button class="btn primary" onclick="runDeadlock()">▶ RUN BANKER'S</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-3" style="margin-bottom:16px">
+      <div class="card">
+        <div class="card-title">ALLOCATION MATRIX</div>
+        <div id="dlAllocMatrix"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">MAX MATRIX</div>
+        <div id="dlMaxMatrix"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">AVAILABLE VECTOR</div>
+        <div id="dlAvailMatrix"></div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">NEED MATRIX</div>
+        <div class="table-wrap"><table><thead><tr id="dlNeedHead"></tr></thead><tbody id="dlNeedBody"></tbody></table></div>
+      </div>
+      <div class="card">
+        <div class="card-title">RESULT</div>
+        <div class="output-box" id="dlOutput" style="min-height:100px">Configure and run Banker's Algorithm.</div>
+        <div style="margin-top:12px">
+          <div class="card-title">RESOURCE REQUEST SIMULATION</div>
+          <div class="input-row" style="margin-bottom:0">
+            <div class="field"><label>Process</label><input id="rrProcIdx" type="number" value="0" min="0" style="width:60px"></div>
+            <div class="field"><label>Request (comma-sep)</label><input id="rrReqVec" placeholder="1,0,2" style="width:120px"></div>
+            <div class="field" style="justify-content:flex-end"><button class="btn" onclick="simulateRequest()">REQUEST</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== FILE MANAGEMENT ===== -->
+  <div class="page" id="page-file">
+    <div class="page-header">
+      <div class="page-title">FILE MANAGEMENT</div>
+      <div class="page-sub">Sequential · Linked · Indexed Allocation</div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-title">FILE ALLOCATION SETUP</div>
+      <div class="input-row">
+        <div class="field"><label>Disk Size (blocks)</label><input id="fileDisk" type="number" value="20" min="10" max="40" style="width:80px"></div>
+        <div class="field"><label>Block Size (KB)</label><input id="fileBlock" type="number" value="4" min="1" style="width:70px"></div>
+        <div class="field"><label>Algorithm</label>
+          <select id="fileAlgo">
+            <option>Sequential</option>
+            <option>Linked</option>
+            <option>Indexed</option>
+          </select>
+        </div>
+        <div class="field"><label>File Sizes (comma-sep)</label><input id="fileSizes" value="3,5,2,4,1" style="width:150px"></div>
+        <div class="field" style="justify-content:flex-end"><button class="btn primary" onclick="runFile()">▶ ALLOCATE</button></div>
+      </div>
+    </div>
+
+    <div class="grid-2" style="margin-bottom:16px">
+      <div class="card">
+        <div class="card-title">BLOCK ALLOCATION TABLE</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>File</th><th>Size</th><th>Start</th><th>Blocks</th><th>Type</th></tr></thead>
+            <tbody id="fileTable"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">STATS</div>
+        <div class="output-box" id="fileOutput">Run allocation to see stats.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">DISK BLOCK VISUALIZATION</div>
+      <div class="disk-grid" id="diskVis" style="grid-template-columns:repeat(20, 1fr)"></div>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<script>
+// ==================== NAVIGATION ====================
+function navigate(page) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelector(`#page-${page}`).classList.add('active');
+  event.currentTarget.classList.add('active');
+  updateLastRun();
+}
+
+// ==================== CLOCK ====================
+function updateClock() {
+  const now = new Date();
+  let h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  document.getElementById('clockDisplay').textContent =
+    `${pad(h)}:${pad(m)}:${pad(s)} ${ampm}`;
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  document.getElementById('dateDisplay').textContent =
+    `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+}
+function pad(n) { return n < 10 ? '0' + n : n; }
+setInterval(updateClock, 1000); updateClock();
+
+let lastRunTime = null;
+function updateLastRun() {
+  lastRunTime = new Date();
+  document.getElementById('lastRunDisplay').textContent = 'Just now';
+}
+setInterval(() => {
+  if (!lastRunTime) return;
+  const diff = Math.floor((new Date() - lastRunTime) / 60000);
+  document.getElementById('lastRunDisplay').textContent = diff < 1 ? 'Just now' : `${diff}m ago`;
+}, 10000);
+
+// ==================== DASHBOARD CHARTS ====================
+const CHART_COLORS = ['#00f5ff','#8b5cf6','#00ff88','#ff8c00','#ff2d78','#ffd700'];
+const CHART_OPTS_BASE = {
+  responsive: true, maintainAspectRatio: false,
+  plugins: { legend: { labels: { color: '#7888aa', font: { size: 11, family: 'Share Tech Mono' }, boxWidth: 10, padding: 12 } } },
+};
+
+function initDashboardCharts() {
+  const pieCtx = document.getElementById('pieChart').getContext('2d');
+  new Chart(pieCtx, {
+    type: 'doughnut',
+    data: {
+      labels: ['CPU Scheduling','Memory Mgmt','Page Replacement','Synchronization','Deadlock Handling','File Management'],
+      datasets: [{ data: [4,4,3,3,1,1], backgroundColor: CHART_COLORS, borderWidth: 2, borderColor: '#0a0e1a', hoverOffset: 8 }]
+    },
+    options: {
+      ...CHART_OPTS_BASE,
+      cutout: '60%',
+      plugins: {
+        ...CHART_OPTS_BASE.plugins,
+        legend: { position: 'right', labels: { color: '#7888aa', font: { size: 10, family: 'Share Tech Mono' }, boxWidth: 10, padding: 10 } }
+      }
+    }
+  });
+
+  const barCtx = document.getElementById('barChart').getContext('2d');
+  new Chart(barCtx, {
+    type: 'bar',
+    data: {
+      labels: ['CPU','Memory','Paging\nModules','Sync','Deadlock','File'],
+      datasets: [{ data: [4,4,3,3,1,1], backgroundColor: CHART_COLORS, borderRadius: 4 }]
+    },
+    options: {
+      ...CHART_OPTS_BASE,
+      plugins: { ...CHART_OPTS_BASE.plugins, legend: { display: false } },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#7888aa', font: { size: 10 } } },
+        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#7888aa', stepSize: 1, font: { size: 10 } }, beginAtZero: true }
+      }
+    }
+  });
+
+  const lineCtx = document.getElementById('lineChart').getContext('2d');
+  const labels = ['10:00','10:15','10:30','10:45','11:00'];
+  const datasets = [
+    { label:'CPU Scheduling', data:[3,6,10,15,20], borderColor:'#00f5ff', tension:0.4, fill:false, pointRadius:3 },
+    { label:'Memory Mgmt', data:[2,5,8,12,17], borderColor:'#8b5cf6', tension:0.4, fill:false, pointRadius:3 },
+    { label:'Page Replacement', data:[1,3,6,9,13], borderColor:'#00ff88', tension:0.4, fill:false, pointRadius:3 },
+    { label:'Synchronization', data:[1,2,4,7,10], borderColor:'#ff8c00', tension:0.4, fill:false, pointRadius:3 },
+    { label:'Deadlock Handling', data:[0,1,2,4,6], borderColor:'#ff2d78', tension:0.4, fill:false, pointRadius:3 },
+    { label:'File Management', data:[0,1,1,2,3], borderColor:'#ffd700', tension:0.4, fill:false, pointRadius:3 },
+  ];
+  new Chart(lineCtx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      ...CHART_OPTS_BASE,
+      plugins: {
+        ...CHART_OPTS_BASE.plugins,
+        legend: { position: 'right', labels: { color: '#7888aa', font: { size: 10, family: 'Share Tech Mono' }, boxWidth: 10, padding: 8 } }
+      },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#7888aa', font: { size: 10 } } },
+        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#7888aa', font: { size: 10 } }, beginAtZero: true }
+      }
+    }
+  });
+}
+initDashboardCharts();
+
+// ==================== CPU SCHEDULING ====================
+let cpuProcesses = [];
+
+document.getElementById('cpuAlgo').addEventListener('change', function() {
+  document.getElementById('rrField').style.display = this.value === 'Round Robin' ? 'flex' : 'none';
+});
+
+function addCPUProcess() {
+  const pid = document.getElementById('cpuPID').value.trim() || `P${cpuProcesses.length+1}`;
+  const at = parseInt(document.getElementById('cpuAT').value) || 0;
+  const bt = parseInt(document.getElementById('cpuBT').value) || 1;
+  const pri = parseInt(document.getElementById('cpuPRI').value) || 1;
+  cpuProcesses.push({ pid, at, bt, pri });
+  document.getElementById('cpuPID').value = `P${cpuProcesses.length+1}`;
+  renderCPUTable();
+}
+
+function loadCPUSample() {
+  cpuProcesses = [
+    {pid:'P1',at:0,bt:6,pri:2},{pid:'P2',at:1,bt:8,pri:1},{pid:'P3',at:2,bt:7,pri:3},
+    {pid:'P4',at:3,bt:3,pri:2},{pid:'P5',at:4,bt:4,pri:1}
+  ];
+  renderCPUTable();
+}
+
+function clearCPU() {
+  cpuProcesses = [];
+  renderCPUTable();
+  document.getElementById('ganttChart').innerHTML = '';
+  document.getElementById('cpuAvgWT').textContent = '—';
+  document.getElementById('cpuAvgTAT').textContent = '—';
+  document.getElementById('cpuUtil').textContent = '—';
+}
+
+function renderCPUTable(results) {
+  const tb = document.getElementById('cpuTable');
+  tb.innerHTML = cpuProcesses.map((p, i) => {
+    const r = results ? results[i] : null;
+    return `<tr>
+      <td><span class="badge cyan">${p.pid}</span></td>
+      <td>${p.at}</td><td>${p.bt}</td><td>${p.pri}</td>
+      <td>${r ? r.ct : '—'}</td><td>${r ? r.tat : '—'}</td>
+      <td>${r ? r.wt : '—'}</td><td>${r ? r.rt : '—'}</td>
+      <td><button class="btn danger" style="padding:3px 8px;font-size:10px" onclick="deleteCPUProcess(${i})">DEL</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function deleteCPUProcess(i) {
+  cpuProcesses.splice(i, 1);
+  renderCPUTable();
+}
+
+function runCPU() {
+  if (!cpuProcesses.length) { alert('Add at least one process.'); return; }
+  const algo = document.getElementById('cpuAlgo').value;
+  const quantum = parseInt(document.getElementById('cpuQuantum').value) || 2;
+  let results, gantt;
+  if (algo === 'FCFS') [results, gantt] = cpuFCFS();
+  else if (algo === 'SJF') [results, gantt] = cpuSJF();
+  else if (algo === 'Round Robin') [results, gantt] = cpuRR(quantum);
+  else [results, gantt] = cpuPriority();
+
+  renderCPUTable(results);
+  drawGantt(gantt);
+
+  const avgWT = (results.reduce((s, r) => s + r.wt, 0) / results.length).toFixed(2);
+  const avgTAT = (results.reduce((s, r) => s + r.tat, 0) / results.length).toFixed(2);
+  const totalBurst = cpuProcesses.reduce((s, p) => s + p.bt, 0);
+  const totalTime = gantt[gantt.length - 1][2];
+  const util = ((totalBurst / totalTime) * 100).toFixed(1);
+  document.getElementById('cpuAvgWT').textContent = avgWT;
+  document.getElementById('cpuAvgTAT').textContent = avgTAT;
+  document.getElementById('cpuUtil').textContent = util + '%';
+  updateLastRun();
+}
+
+function cpuFCFS() {
+  const ps = [...cpuProcesses].sort((a, b) => a.at - b.at);
+  let t = 0, gantt = [];
+  const res = ps.map(p => {
+    if (t < p.at) t = p.at;
+    const rt = t - p.at;
+    gantt.push([p.pid, t, t + p.bt]);
+    t += p.bt;
+    return { ...p, ct: t, tat: t - p.at, wt: t - p.at - p.bt, rt };
+  });
+  return [res, gantt];
+}
+
+function cpuSJF() {
+  const ps = cpuProcesses.map((p, i) => ({ ...p, done: false, idx: i }));
+  let t = 0, gantt = [], res = new Array(ps.length), done = 0;
+  while (done < ps.length) {
+    const avail = ps.filter(p => !p.done && p.at <= t).sort((a, b) => a.bt - b.bt);
+    if (!avail.length) { t++; continue; }
+    const p = avail[0];
+    const rt = t - p.at;
+    gantt.push([p.pid, t, t + p.bt]);
+    t += p.bt;
+    p.done = true; done++;
+    res[p.idx] = { ...p, ct: t, tat: t - p.at, wt: t - p.at - p.bt, rt };
+  }
+  return [res, gantt];
+}
+
+function cpuRR(q) {
+  const ps = cpuProcesses.map((p, i) => ({ ...p, rem: p.bt, first: -1, idx: i }));
+  let t = 0, gantt = [], res = new Array(ps.length), queue = [], added = new Set();
+  ps.filter(p => p.at <= 0).forEach(p => { queue.push(p); added.add(p.idx); });
+  while (queue.length) {
+    const p = queue.shift();
+    if (p.first === -1) p.first = t;
+    const run = Math.min(q, p.rem);
+    gantt.push([p.pid, t, t + run]);
+    t += run; p.rem -= run;
+    ps.filter(pp => !added.has(pp.idx) && pp.at <= t).forEach(pp => { queue.push(pp); added.add(pp.idx); });
+    if (p.rem > 0) queue.push(p);
+    else { res[p.idx] = { ...p, ct: t, tat: t - p.at, wt: t - p.at - p.bt, rt: p.first - p.at }; }
+  }
+  return [res, gantt];
+}
+
+function cpuPriority() {
+  const ps = cpuProcesses.map((p, i) => ({ ...p, done: false, idx: i }));
+  let t = 0, gantt = [], res = new Array(ps.length), done = 0;
+  while (done < ps.length) {
+    const avail = ps.filter(p => !p.done && p.at <= t).sort((a, b) => a.pri - b.pri);
+    if (!avail.length) { t++; continue; }
+    const p = avail[0];
+    const rt = t - p.at;
+    gantt.push([p.pid, t, t + p.bt]);
+    t += p.bt;
+    p.done = true; done++;
+    res[p.idx] = { ...p, ct: t, tat: t - p.at, wt: t - p.at - p.bt, rt };
+  }
+  return [res, gantt];
+}
+
+const GANTT_COLORS = ['#00f5ff','#8b5cf6','#00ff88','#ff8c00','#ff2d78','#ffd700','#4fc3f7','#ce93d8'];
+function drawGantt(gantt) {
+  const container = document.getElementById('ganttChart');
+  if (!gantt.length) return;
+  const total = gantt[gantt.length - 1][2];
+  const colorMap = {};
+  let ci = 0;
+  gantt.forEach(g => { if (!colorMap[g[0]]) colorMap[g[0]] = GANTT_COLORS[ci++ % GANTT_COLORS.length]; });
+
+  const html = `
+    <div style="display:flex;align-items:stretch;min-height:44px;position:relative">
+      ${gantt.map(g => {
+        const w = ((g[2]-g[1])/total*100).toFixed(2);
+        return `<div style="width:${w}%;background:${colorMap[g[0]]}18;border:1px solid ${colorMap[g[0]]}55;display:flex;align-items:center;justify-content:center;position:relative;min-width:16px">
+          <span style="font-family:var(--font-mono);font-size:11px;color:${colorMap[g[0]]}">${g[0]}</span>
+        </div>`;
+      }).join('')}
+    </div>
+    <div style="display:flex;position:relative;margin-top:4px">
+      ${gantt.map(g => {
+        const w = ((g[2]-g[1])/total*100).toFixed(2);
+        return `<div style="width:${w}%;text-align:left;font-family:var(--font-mono);font-size:9px;color:var(--text3);border-left:1px solid var(--border)">${g[1]}</div>`;
+      }).join('')}
+      <div style="font-family:var(--font-mono);font-size:9px;color:var(--text3);margin-left:auto;padding-left:4px">${total}</div>
+    </div>`;
+  container.innerHTML = html;
+}
+
+// ==================== MEMORY MANAGEMENT ====================
+function runMemory() {
+  const blocks = document.getElementById('memBlocks').value.split(',').map(Number);
+  const procs = document.getElementById('memProcs').value.split(',').map(Number);
+  const algo = document.getElementById('memAlgo').value;
+  const blockCopy = [...blocks];
+  const alloc = new Array(procs.length).fill(-1);
+  const blockUsed = new Array(blocks.length).fill(0);
+  let ptr = 0;
+
+  if (algo === 'First Fit') {
+    procs.forEach((ps, i) => {
+      for (let j = 0; j < blockCopy.length; j++) {
+        if (blockCopy[j] >= ps) { alloc[i] = j; blockCopy[j] -= ps; blockUsed[j] += ps; break; }
+      }
+    });
+  } else if (algo === 'Best Fit') {
+    procs.forEach((ps, i) => {
+      let best = -1;
+      for (let j = 0; j < blockCopy.length; j++) {
+        if (blockCopy[j] >= ps) { if (best === -1 || blockCopy[j] < blockCopy[best]) best = j; }
+      }
+      if (best !== -1) { alloc[i] = best; blockCopy[best] -= ps; blockUsed[best] += ps; }
+    });
+  } else if (algo === 'Worst Fit') {
+    procs.forEach((ps, i) => {
+      let worst = -1;
+      for (let j = 0; j < blockCopy.length; j++) {
+        if (blockCopy[j] >= ps) { if (worst === -1 || blockCopy[j] > blockCopy[worst]) worst = j; }
+      }
+      if (worst !== -1) { alloc[i] = worst; blockCopy[worst] -= ps; blockUsed[worst] += ps; }
+    });
+  } else { // Next Fit
+    procs.forEach((ps, i) => {
+      let count = 0;
+      while (count < blockCopy.length) {
+        if (blockCopy[ptr] >= ps) { alloc[i] = ptr; blockCopy[ptr] -= ps; blockUsed[ptr] += ps; ptr = (ptr+1) % blockCopy.length; break; }
+        ptr = (ptr+1) % blockCopy.length; count++;
+      }
+    });
+  }
+
+  const tb = document.getElementById('memTable');
+  tb.innerHTML = procs.map((ps, i) => `<tr>
+    <td><span class="badge cyan">P${i+1}</span></td>
+    <td>${ps} KB</td>
+    <td>${alloc[i] !== -1 ? alloc[i]+1 : '—'}</td>
+    <td>${alloc[i] !== -1 ? blocks[alloc[i]] + ' KB' : '—'}</td>
+    <td>${alloc[i] !== -1 ? '<span class="badge green">ALLOCATED</span>' : '<span class="badge pink">NOT ALLOC</span>'}</td>
+  </tr>`).join('');
+
+  const totalFrag = blockCopy.reduce((s, v) => s + v, 0);
+  const intFrag = blockUsed.map((u, i) => blocks[i] - u).filter(v => v > 0).reduce((a, b) => a + b, 0);
+  document.getElementById('memOutput').innerHTML =
+    `<span class="info">Algorithm: ${algo}</span>\n` +
+    `Total Memory: ${blocks.reduce((a,b)=>a+b,0)} KB\n` +
+    `Used Memory: ${procs.filter((_,i)=>alloc[i]!==-1).reduce((s,p)=>s+p,0)} KB\n` +
+    `<span class="warn">External Fragmentation: ${totalFrag} KB</span>\n` +
+    `<span class="warn">Internal Fragmentation: ${intFrag} KB</span>\n` +
+    `Allocated: ${alloc.filter(a=>a!==-1).length}/${procs.length} processes`;
+
+  renderMemVis(blocks, blockUsed, alloc, procs);
+  updateLastRun();
+}
+
+function renderMemVis(blocks, blockUsed, alloc, procs) {
+  const vis = document.getElementById('memVis');
+  const COLORS = ['#00f5ff','#8b5cf6','#00ff88','#ff8c00','#ff2d78','#ffd700'];
+  vis.innerHTML = blocks.map((b, i) => {
+    const procIdx = alloc.findIndex(a => a === i);
+    const used = blockUsed[i];
+    const usedPct = Math.round(used / b * 100);
+    const color = procIdx !== -1 ? COLORS[procIdx % COLORS.length] : 'var(--text3)';
+    return `<div class="mem-block" style="width:${Math.max(b/8,30)}px;background:${color}22;border-color:${color}44;color:${color};flex-direction:column;height:48px;font-size:9px;gap:2px">
+      <span>B${i+1}</span>
+      <span>${b}KB</span>
+      ${procIdx !== -1 ? `<span style="color:${color};font-size:8px">P${procIdx+1}(${usedPct}%)</span>` : '<span style="opacity:0.4">FREE</span>'}
+    </div>`;
+  }).join('');
+}
+
+// ==================== PAGE REPLACEMENT ====================
+function runPage() {
+  const refStr = document.getElementById('pageRef').value.trim().split(/\s+/).map(Number);
+  const frames = parseInt(document.getElementById('pageFrames').value);
+  const algo = document.getElementById('pageAlgo').value;
+  let result;
+  if (algo === 'FIFO') result = pageFIFO(refStr, frames);
+  else if (algo === 'LRU') result = pageLRU(refStr, frames);
+  else result = pageOptimal(refStr, frames);
+
+  renderPageTable(refStr, result.states, result.faults);
+  document.getElementById('pageHits').textContent = refStr.length - result.faults;
+  document.getElementById('pageFaults').textContent = result.faults;
+  document.getElementById('pageHitRatio').textContent = ((refStr.length - result.faults) / refStr.length * 100).toFixed(1) + '%';
+  renderPageLog(refStr, result.states, result.log);
+  updateLastRun();
+}
+
+function pageFIFO(ref, frames) {
+  let fr = [], faults = 0, states = [], log = [], queue = [];
+  ref.forEach((pg, i) => {
+    let fault = false;
+    if (!fr.includes(pg)) {
+      fault = true; faults++;
+      if (fr.length < frames) { fr.push(pg); queue.push(pg); }
+      else { const old = queue.shift(); fr[fr.indexOf(old)] = pg; queue.push(pg); }
+      log.push(`[FAULT] Page ${pg} → replaced, frames: [${fr.join(',')}]`);
+    } else {
+      log.push(`[HIT]   Page ${pg} → in frames: [${fr.join(',')}]`);
+    }
+    states.push({ frames: [...fr], fault, page: pg });
+  });
+  return { faults, states, log };
+}
+
+function pageLRU(ref, frames) {
+  let fr = [], faults = 0, states = [], log = [], recent = [];
+  ref.forEach((pg, i) => {
+    let fault = false;
+    if (!fr.includes(pg)) {
+      fault = true; faults++;
+      if (fr.length < frames) { fr.push(pg); }
+      else { const lru = recent.find(r => fr.includes(r)); fr[fr.indexOf(lru)] = pg; }
+      log.push(`[FAULT] Page ${pg} → replaced, frames: [${fr.join(',')}]`);
+    } else {
+      log.push(`[HIT]   Page ${pg} → in frames: [${fr.join(',')}]`);
+    }
+    recent = [pg, ...recent.filter(r => r !== pg)];
+    states.push({ frames: [...fr], fault, page: pg });
+  });
+  return { faults, states, log };
+}
+
+function pageOptimal(ref, frames) {
+  let fr = [], faults = 0, states = [], log = [];
+  ref.forEach((pg, i) => {
+    let fault = false;
+    if (!fr.includes(pg)) {
+      fault = true; faults++;
+      if (fr.length < frames) { fr.push(pg); }
+      else {
+        const future = fr.map(f => { const nxt = ref.indexOf(f, i+1); return nxt === -1 ? Infinity : nxt; });
+        const replIdx = future.indexOf(Math.max(...future));
+        log.push(`[FAULT] Page ${pg} → replaced ${fr[replIdx]}, frames: [${fr.join(',')}]`);
+        fr[replIdx] = pg;
+      }
+      if (!log[log.length-1] || !log[log.length-1].includes(pg)) log.push(`[FAULT] Page ${pg} → loaded, frames: [${fr.join(',')}]`);
+    } else {
+      log.push(`[HIT]   Page ${pg} → in frames: [${fr.join(',')}]`);
+    }
+    states.push({ frames: [...fr], fault, page: pg });
+  });
+  return { faults, states, log };
+}
+
+function renderPageTable(ref, states, totalFaults) {
+  const vis = document.getElementById('pageTableVis');
+  vis.style.gridTemplateColumns = `repeat(${ref.length}, minmax(44px, 1fr))`;
+  vis.innerHTML = states.map((s, i) => {
+    const cls = s.fault ? 'fault' : 'hit';
+    return `<div class="frame-cell ${cls}">
+      <span class="fnum">Pg${s.page}</span>
+      <span class="fval">${s.frames.join(',')}</span>
+      <span style="font-size:9px">${s.fault ? '❌' : '✓'}</span>
+    </div>`;
+  }).join('');
+}
+
+function renderPageLog(ref, states, log) {
+  const box = document.getElementById('pageLog');
+  box.innerHTML = log.map(l => {
+    if (l.startsWith('[HIT]')) return `<span class="ok">${l}</span>`;
+    return `<span class="err">${l}</span>`;
+  }).join('\n');
+}
+
+// ==================== SYNCHRONIZATION ====================
+let syncBuf = [], syncBufSize = 5, syncIn = 0, syncOut = 0, semMutex = 1, semEmpty = 5, semFull = 0;
+
+function initSync() {
+  syncBufSize = parseInt(document.getElementById('syncBufSize').value) || 5;
+  syncBuf = new Array(syncBufSize).fill(null);
+  syncIn = 0; syncOut = 0;
+  semMutex = 1; semEmpty = syncBufSize; semFull = 0;
+  renderSync();
+  appendSyncLog(`<span class="info">[INIT] Buffer size: ${syncBufSize}, Semaphores initialized</span>`);
+}
+
+function syncProduce() {
+  if (semEmpty === 0) { appendSyncLog('<span class="err">[BLOCKED] Producer blocked — buffer full</span>'); return; }
+  if (semMutex === 0) { appendSyncLog('<span class="warn">[WAIT] Mutex locked — producer waiting</span>'); return; }
+  semEmpty--; semMutex = 0;
+  const item = Math.floor(Math.random() * 90) + 10;
+  syncBuf[syncIn] = item;
+  syncIn = (syncIn + 1) % syncBufSize;
+  semFull++; semMutex = 1;
+  renderSync();
+  appendSyncLog(`<span class="ok">[PRODUCE] Item ${item} added at slot ${syncIn === 0 ? syncBufSize-1 : syncIn-1} | Full=${semFull} Empty=${semEmpty}</span>`);
+}
+
+function syncConsume() {
+  if (semFull === 0) { appendSyncLog('<span class="err">[BLOCKED] Consumer blocked — buffer empty</span>'); return; }
+  if (semMutex === 0) { appendSyncLog('<span class="warn">[WAIT] Mutex locked — consumer waiting</span>'); return; }
+  semFull--; semMutex = 0;
+  const item = syncBuf[syncOut];
+  syncBuf[syncOut] = null;
+  syncOut = (syncOut + 1) % syncBufSize;
+  semEmpty++; semMutex = 1;
+  renderSync();
+  appendSyncLog(`<span class="ok">[CONSUME] Item ${item} consumed from slot ${syncOut === 0 ? syncBufSize-1 : syncOut-1} | Full=${semFull} Empty=${semEmpty}</span>`);
+}
+
+function resetSync() {
+  syncBuf = []; syncIn = 0; syncOut = 0;
+  semMutex = 1; semEmpty = 5; semFull = 0;
+  document.getElementById('bufferVis').innerHTML = '';
+  document.getElementById('syncLog').innerHTML = 'Reset complete. Initialize to start.';
+  document.getElementById('semMutex').textContent = '1';
+  document.getElementById('semEmpty').textContent = '5';
+  document.getElementById('semFull').textContent = '0';
+  document.getElementById('syncIn').textContent = '0';
+  document.getElementById('syncOut').textContent = '0';
+}
+
+function renderSync() {
+  document.getElementById('semMutex').textContent = semMutex;
+  document.getElementById('semEmpty').textContent = semEmpty;
+  document.getElementById('semFull').textContent = semFull;
+  document.getElementById('syncIn').textContent = syncIn;
+  document.getElementById('syncOut').textContent = syncOut;
+  const vis = document.getElementById('bufferVis');
+  vis.innerHTML = syncBuf.map((v, i) => {
+    const isFull = v !== null;
+    const isIn = i === syncIn;
+    const isOut = i === syncOut;
+    return `<div class="sem-slot ${isFull ? 'full' : 'empty'}">
+      <span class="slot-val">${v !== null ? v : '—'}</span>
+      <span style="font-size:9px">${isIn ? '↑IN' : isOut ? '↓OUT' : `S${i}`}</span>
+    </div>`;
+  }).join('');
+}
+
+function appendSyncLog(html) {
+  const log = document.getElementById('syncLog');
+  log.innerHTML += (log.innerHTML ? '\n' : '') + html;
+  log.scrollTop = log.scrollHeight;
+}
+
+initSync();
+
+// ==================== DEADLOCK (BANKER'S) ====================
+let dlData = { alloc: [], max: [], avail: [], procs: 5, res: 3 };
+
+function buildDLMatrices() {
+  dlData.procs = parseInt(document.getElementById('dlProcs').value) || 5;
+  dlData.res = parseInt(document.getElementById('dlRes').value) || 3;
+  dlData.alloc = Array.from({length:dlData.procs}, () => new Array(dlData.res).fill(0));
+  dlData.max = Array.from({length:dlData.procs}, () => new Array(dlData.res).fill(0));
+  dlData.avail = new Array(dlData.res).fill(0);
+  renderDLMatrices();
+}
+
+function renderDLMatrices() {
+  const resLabels = Array.from({length:dlData.res}, (_,i) => String.fromCharCode(65+i));
+
+  ['dlAllocMatrix','dlMaxMatrix'].forEach((id, matIdx) => {
+    const mat = matIdx === 0 ? dlData.alloc : dlData.max;
+    document.getElementById(id).innerHTML = `
+      <table style="font-family:var(--font-mono);font-size:12px">
+        <thead><tr><th style="padding:4px 8px;color:var(--text3)">P</th>${resLabels.map(r=>`<th style="padding:4px 8px;color:var(--text3)">${r}</th>`).join('')}</tr></thead>
+        <tbody>
+          ${Array.from({length:dlData.procs},(_,i)=>`<tr><td style="padding:3px 8px;color:var(--text2)">P${i}</td>${Array.from({length:dlData.res},(_,j)=>`<td><input type="number" min="0" max="9" value="${mat[i][j]}" style="width:36px;padding:4px;text-align:center;background:var(--bg3);border:1px solid var(--border2);border-radius:4px;color:var(--text);font-family:var(--font-mono);font-size:12px" onchange="dlData.${matIdx===0?'alloc':'max'}[${i}][${j}]=+this.value"></td>`).join('')}</tr>`).join('')}
+        </tbody>
+      </table>`;
+  });
+
+  document.getElementById('dlAvailMatrix').innerHTML = `
+    <table style="font-family:var(--font-mono);font-size:12px">
+      <thead><tr>${resLabels.map(r=>`<th style="padding:4px 8px;color:var(--text3)">${r}</th>`).join('')}</tr></thead>
+      <tbody><tr>${Array.from({length:dlData.res},(_,j)=>`<td><input type="number" min="0" max="99" value="${dlData.avail[j]}" style="width:44px;padding:4px;text-align:center;background:var(--bg3);border:1px solid var(--border2);border-radius:4px;color:var(--text);font-family:var(--font-mono);font-size:12px" onchange="dlData.avail[${j}]=+this.value"></td>`).join('')}</tr></tbody>
+    </table>`;
+}
+
+function loadDLSample() {
+  document.getElementById('dlProcs').value = 5;
+  document.getElementById('dlRes').value = 3;
+  dlData = {
+    procs: 5, res: 3,
+    alloc: [[0,1,0],[2,0,0],[3,0,2],[2,1,1],[0,0,2]],
+    max:   [[7,5,3],[3,2,2],[9,0,2],[2,2,2],[4,3,3]],
+    avail: [3,3,2]
+  };
+  renderDLMatrices();
+}
+
+function runDeadlock() {
+  const n = dlData.procs, m = dlData.res;
+  const need = dlData.alloc.map((r, i) => r.map((v, j) => dlData.max[i][j] - v));
+  const work = [...dlData.avail];
+  const finish = new Array(n).fill(false);
+  const seq = [];
+
+  // Check negative need
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < m; j++) {
+      if (need[i][j] < 0) {
+        document.getElementById('dlOutput').innerHTML = `<span class="err">[ERROR] P${i}: Max < Allocation for resource ${String.fromCharCode(65+j)}</span>`;
+        return;
+      }
+    }
+  }
+
+  let progress = true;
+  while (progress) {
+    progress = false;
+    for (let i = 0; i < n; i++) {
+      if (!finish[i] && need[i].every((v, j) => v <= work[j])) {
+        need[i].forEach((_, j) => work[j] += dlData.alloc[i][j]);
+        finish[i] = true; seq.push(i); progress = true;
+      }
+    }
+  }
+
+  const safe = finish.every(Boolean);
+  const resLabels = Array.from({length:m}, (_,i) => String.fromCharCode(65+i));
+
+  // Need table
+  const head = document.getElementById('dlNeedHead');
+  head.innerHTML = `<th style="padding:4px 8px;color:var(--text3)">P</th>${resLabels.map(r=>`<th style="padding:4px 8px;color:var(--text3)">${r}</th>`).join('')}`;
+  document.getElementById('dlNeedBody').innerHTML = need.map((r,i)=>`<tr><td style="padding:4px 8px">${'P'+i}</td>${r.map(v=>`<td style="padding:4px 8px">${v}</td>`).join('')}</tr>`).join('');
+
+  if (safe) {
+    document.getElementById('dlOutput').innerHTML =
+      `<span class="ok">[SAFE STATE DETECTED]</span>\n\nSafe Sequence:\n<span class="info">→ ${seq.map(i=>'P'+i).join(' → ')}</span>\n\nSystem is in a safe state.\nAll processes can complete.`;
+  } else {
+    const deadlocked = finish.map((f, i) => !f ? 'P'+i : null).filter(Boolean);
+    document.getElementById('dlOutput').innerHTML =
+      `<span class="err">[UNSAFE STATE — DEADLOCK POSSIBLE]</span>\n\nDeadlocked processes:\n<span class="err">${deadlocked.join(', ')}</span>\n\nPartial sequence: ${seq.map(i=>'P'+i).join(' → ') || 'None'}`;
+  }
+  updateLastRun();
+}
+
+function simulateRequest() {
+  const pi = parseInt(document.getElementById('rrProcIdx').value);
+  const reqRaw = document.getElementById('rrReqVec').value.split(',').map(Number);
+  const n = dlData.procs, m = dlData.res;
+  if (pi < 0 || pi >= n) { document.getElementById('dlOutput').innerHTML += '\n<span class="err">[REQUEST] Invalid process index</span>'; return; }
+  const need = dlData.alloc.map((r, i) => r.map((v, j) => dlData.max[i][j] - v));
+  const req = reqRaw.length === m ? reqRaw : new Array(m).fill(0);
+
+  for (let j = 0; j < m; j++) {
+    if (req[j] > need[pi][j]) {
+      document.getElementById('dlOutput').innerHTML += `\n<span class="err">[REQUEST] Exceeds need! P${pi} needs at most ${need[pi][j]} of R${j}</span>`; return;
+    }
+    if (req[j] > dlData.avail[j]) {
+      document.getElementById('dlOutput').innerHTML += `\n<span class="warn">[REQUEST] P${pi} must wait — not enough available resources</span>`; return;
+    }
+  }
+
+  // Pretend allocate
+  req.forEach((_, j) => { dlData.avail[j] -= req[j]; dlData.alloc[pi][j] += req[j]; });
+  document.getElementById('dlOutput').innerHTML += `\n<span class="ok">[REQUEST] P${pi} granted [${req.join(',')}] — checking safety...</span>`;
+  renderDLMatrices();
+  runDeadlock();
+}
+
+buildDLMatrices();
+loadDLSample();
+
+// ==================== FILE MANAGEMENT ====================
+function runFile() {
+  const diskSize = parseInt(document.getElementById('fileDisk').value) || 20;
+  const blockSz = parseInt(document.getElementById('fileBlock').value) || 4;
+  const algo = document.getElementById('fileAlgo').value;
+  const fileSizes = document.getElementById('fileSizes').value.split(',').map(Number).filter(v => v > 0);
+  const COLORS_FILE = ['#00f5ff','#8b5cf6','#00ff88','#ff8c00','#ff2d78','#ffd700'];
+
+  // Allocate blocks
+  const disk = new Array(diskSize).fill(null); // null = free, {file, type} = used
+  const allocations = [];
+  let ptr = 0;
+  const indexBlocks = [];
+
+  fileSizes.forEach((sz, fi) => {
+    const needed = sz;
+    const color = COLORS_FILE[fi % COLORS_FILE.length];
+    if (algo === 'Sequential') {
+      let start = -1;
+      for (let i = 0; i <= diskSize - needed; i++) {
+        if (disk.slice(i, i+needed).every(b => b === null)) { start = i; break; }
+      }
+      if (start !== -1) {
+        for (let i = start; i < start+needed; i++) disk[i] = { file: fi, color, type: 'data' };
+        allocations.push({ fi, sz, start, blocks: Array.from({length:needed},(_,k)=>start+k), algo:'Sequential' });
+      } else allocations.push({ fi, sz, start: -1, blocks: [], algo:'Sequential' });
+    } else if (algo === 'Linked') {
+      const freeBlocks = disk.map((v,i) => v===null?i:-1).filter(i=>i!==-1).slice(0, needed);
+      if (freeBlocks.length >= needed) {
+        freeBlocks.forEach(b => disk[b] = { file: fi, color, type: 'data' });
+        allocations.push({ fi, sz, start: freeBlocks[0], blocks: freeBlocks, algo:'Linked' });
+      } else allocations.push({ fi, sz, start: -1, blocks: [], algo:'Linked' });
+    } else { // Indexed
+      const freeBlocks = disk.map((v,i) => v===null?i:-1).filter(i=>i!==-1);
+      if (freeBlocks.length >= needed + 1) {
+        const idxBlock = freeBlocks[0];
+        disk[idxBlock] = { file: fi, color, type: 'index' };
+        const dataBlocks = freeBlocks.slice(1, needed+1);
+        dataBlocks.forEach(b => disk[b] = { file: fi, color, type: 'data' });
+        allocations.push({ fi, sz, start: idxBlock, blocks: [idxBlock, ...dataBlocks], algo:'Indexed' });
+      } else allocations.push({ fi, sz, start: -1, blocks: [], algo:'Indexed' });
+    }
+  });
+
+  // Table
+  document.getElementById('fileTable').innerHTML = allocations.map(a => `<tr>
+    <td><span class="badge" style="background:${COLORS_FILE[a.fi%COLORS_FILE.length]}22;color:${COLORS_FILE[a.fi%COLORS_FILE.length]};border-color:${COLORS_FILE[a.fi%COLORS_FILE.length]}44">F${a.fi+1}</span></td>
+    <td>${a.sz} blks (${a.sz*blockSz}KB)</td>
+    <td>${a.start !== -1 ? a.start : '—'}</td>
+    <td>${a.blocks.join(', ') || 'N/A'}</td>
+    <td>${a.start !== -1 ? `<span class="badge green">${a.algo}</span>` : '<span class="badge pink">FAILED</span>'}</td>
+  </tr>`).join('');
+
+  const used = disk.filter(b=>b!==null).length;
+  const free = diskSize - used;
+  document.getElementById('fileOutput').innerHTML =
+    `<span class="info">Algorithm: ${algo}</span>\n` +
+    `Disk Size: ${diskSize} blocks (${diskSize*blockSz}KB)\n` +
+    `Used: ${used} blocks | Free: ${free} blocks\n` +
+    `Files Allocated: ${allocations.filter(a=>a.start!==-1).length}/${fileSizes.length}\n` +
+    `Utilization: ${Math.round(used/diskSize*100)}%`;
+
+  // Disk visualization
+  document.getElementById('diskVis').style.gridTemplateColumns = `repeat(${Math.min(diskSize, 20)}, 1fr)`;
+  document.getElementById('diskVis').innerHTML = disk.map((b, i) => {
+    const filled = b !== null;
+    const isIdx = b && b.type === 'index';
+    const bg = filled ? b.color + '33' : 'var(--bg3)';
+    const border = filled ? b.color + '66' : 'var(--border)';
+    const txt = filled ? (isIdx ? 'IDX' : `F${b.file+1}`) : '·';
+    const txtColor = filled ? b.color : 'var(--text3)';
+    return `<div class="disk-block" style="background:${bg};border-color:${border};color:${txtColor}" title="Block ${i}: ${filled ? (isIdx?'Index':'Data') : 'Free'}">${txt}</div>`;
+  }).join('');
+
+  updateLastRun();
+}
+
+// Load initial sample for deadlock
+document.addEventListener('DOMContentLoaded', () => {});
+</script>
+</body>
+</html>
